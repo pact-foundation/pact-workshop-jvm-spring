@@ -449,3 +449,98 @@ BUILD SUCCESSFUL in 10s
 ```
 
 Yay - green ✅!
+
+## Step 6 - Consumer updates contract for missing products
+
+We're now going to add 2 more scenarios for the contract
+
+- What happens when we make a call for a product that doesn't exist? We assume we'll get a `404`.
+
+- What happens when we make a call for getting all products but none exist at the moment? We assume a `200` with an empty array.
+
+Let's write a test for these scenarios, and then generate an updated pact file.
+
+In `consumer/src/test/java/au/com/dius/pactworkshop/consumer/ProductConsumerPactTest.java`:
+
+```java
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact noProductsExist(PactDslWithProvider builder) {
+        return builder.given("no products exist")
+                .uponReceiving("get all products")
+                .method("GET")
+                .path("/products")
+                .willRespondWith()
+                .status(200)
+                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .body("[]")
+                .toPact();
+    }
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact productDoesNotExist(PactDslWithProvider builder) {
+        return builder.given("product with ID 11 does not exist")
+                .uponReceiving("get product with ID 11")
+                .method("GET")
+                .path("/product/11")
+                .willRespondWith()
+                .status(404)
+                .toPact();
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "noProductsExist")
+    void getAllProducts_whenNoProductsExist(MockServer mockServer) {
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+        List<Product> products = new ProductService(restTemplate).getAllProducts();
+
+        assertEquals(Collections.emptyList(), products);
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "productDoesNotExist")
+    void getProductById_whenProductWithId11DoesNotExist(MockServer mockServer) {
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+                () -> new ProductService(restTemplate).getProduct("11"));
+        assertEquals(404, e.getRawStatusCode());
+    }
+```
+
+Notice that our new tests look almost identical to our previous tests, and only differ on the expectations of the _response_ - the HTTP request expectations are exactly the same.
+
+```console
+❯ ./gradlew consumer:test --tests *PactTest
+  
+  BUILD SUCCESSFUL in 1s
+```
+
+What does our provider have to say about this new test. Again, copy the updated pact file into the provider's pact directory and run the command:
+
+```console
+❯ ./gradlew provider:test --tests *Pact*Test
+
+...
+...
+
+au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication - get all products FAILED
+    java.lang.AssertionError at ProductPactProviderTest.java:33
+
+au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication - get product with ID 11 FAILED
+    java.lang.AssertionError at ProductPactProviderTest.java:33
+2020-10-09 08:27:31.030  INFO 18048 --- [extShutdownHook] o.s.s.concurrent.Threa
+4 tests completed, 2 failed
+
+> Task :provider:test FAILED
+
+FAILURE: Build failed with an exception.
+
+```
+
+We expected this failure, because the product we are requesting does in fact exist! What we want to test for, is what happens if there is a different *state* on the Provider. This is what is referred to as "Provider states", and how Pact gets around test ordering and related issues.
+
+We could resolve this by updating our consumer test to use a known non-existent product, but it's worth understanding how Provider states work more generally.

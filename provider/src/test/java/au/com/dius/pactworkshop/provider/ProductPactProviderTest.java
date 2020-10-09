@@ -38,8 +38,18 @@ public class ProductPactProviderTest {
 
     }
 
+    @State("no products exist")
+    void toNoProductsExistState() {
+
+    }
+
     @State("product with ID 10 exists")
     void toProductWithIdTenExistsState() {
+
+    }
+
+    @State("product with ID 11 does not exist")
+    void toProductWithIdElevenDoesNotExistState() {
 
     }
 }
