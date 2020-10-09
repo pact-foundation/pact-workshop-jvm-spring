@@ -593,3 +593,259 @@ BUILD SUCCESSFUL in 11s
 ```
 
 _NOTE_: The states are not necessarily a 1 to 1 mapping with the consumer contract tests. You can reuse states amongst different tests. In this scenario we could have used `no products exist` for both tests which would have equally been valid.
+
+## Step 8 - Authorization
+
+It turns out that not everyone should be able to use the API. After a discussion with the team, it was decided that a time-bound bearer token would suffice. The token must be in `yyyy-MM-ddTHHmm` format and within 1 hour of the current time.
+
+In the case a valid bearer token is not provided, we expect a `401`. Let's update the consumer to pass the bearer token, and capture this new `401` scenario.
+
+In `consumer/src/main/au/com/dius/pactworkshop/consumer/ProductService.java`:
+
+```java
+@Service
+public class ProductService {
+
+    private final RestTemplate restTemplate;
+
+    @Autowired
+    public ProductService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    public List<Product> getAllProducts() {
+        return restTemplate.exchange("/products",
+                HttpMethod.GET,
+                getRequestEntity(),
+                new ParameterizedTypeReference<List<Product>>(){}).getBody();
+    }
+
+    public Product getProduct(String id) {
+        return restTemplate.exchange("/product/{id}",
+                HttpMethod.GET,
+                getRequestEntity(),
+                Product.class, id).getBody();
+    }
+
+    private HttpEntity<String> getRequestEntity() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.AUTHORIZATION, generateAuthToken());
+        return new HttpEntity<>(headers);
+    }
+
+    private String generateAuthToken() {
+        return "Bearer " +  new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new Date());
+    }
+}
+```
+
+In `consumer/src/api.pact.spec.js`:
+
+```java
+@ExtendWith(PactConsumerTestExt.class)
+public class ProductConsumerPactTest {
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact getAllProducts(PactDslWithProvider builder) {
+        return builder.given("products exist")
+                .uponReceiving("get all products")
+                .method("GET")
+                .path("/products")
+                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+                .willRespondWith()
+                .status(200)
+                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .body(newJsonArrayMinLike(2, array ->
+                        array.object(object -> {
+                            object.stringType("id", "09");
+                            object.stringType("type", "CREDIT_CARD");
+                            object.stringType("name", "Gem Visa");
+                        })
+                ).build())
+                .toPact();
+    }
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact noProductsExist(PactDslWithProvider builder) {
+        return builder.given("no products exist")
+                .uponReceiving("get all products")
+                .method("GET")
+                .path("/products")
+                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+                .willRespondWith()
+                .status(200)
+                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .body("[]")
+                .toPact();
+    }
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact allProductsNoAuthToken(PactDslWithProvider builder) {
+        return builder.given("products exist")
+                .uponReceiving("get all products with no auth token")
+                .method("GET")
+                .path("/products")
+                .willRespondWith()
+                .status(401)
+                .toPact();
+    }
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact getOneProduct(PactDslWithProvider builder) {
+        return builder.given("product with ID 10 exists")
+                .uponReceiving("get product with ID 10")
+                .method("GET")
+                .path("/product/10")
+                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+                .willRespondWith()
+                .status(200)
+                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .body(newJsonBody(object -> {
+                    object.stringType("id", "10");
+                    object.stringType("type", "CREDIT_CARD");
+                    object.stringType("name", "28 Degrees");
+                }).build())
+                .toPact();
+    }
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact productDoesNotExist(PactDslWithProvider builder) {
+        return builder.given("product with ID 11 does not exist")
+                .uponReceiving("get product with ID 11")
+                .method("GET")
+                .path("/product/11")
+                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+                .willRespondWith()
+                .status(404)
+                .toPact();
+    }
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact singleProductnoAuthToken(PactDslWithProvider builder) {
+        return builder.given("product with ID 10 exists")
+                .uponReceiving("get product by ID 10 with no auth token")
+                .method("GET")
+                .path("/product/10")
+                .willRespondWith()
+                .status(401)
+                .toPact();
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "getAllProducts")
+    void getAllProducts_whenProductsExist(MockServer mockServer) {
+        Product product = new Product();
+        product.setId("09");
+        product.setType("CREDIT_CARD");
+        product.setName("Gem Visa");
+        List<Product> expected = List.of(product, product);
+
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+        List<Product> products = new ProductService(restTemplate).getAllProducts();
+
+        assertEquals(expected, products);
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "noProductsExist")
+    void getAllProducts_whenNoProductsExist(MockServer mockServer) {
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+        List<Product> products = new ProductService(restTemplate).getAllProducts();
+
+        assertEquals(Collections.emptyList(), products);
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "allProductsNoAuthToken")
+    void getAllProducts_whenNoAuth(MockServer mockServer) {
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+                () -> new ProductService(restTemplate).getAllProducts());
+        assertEquals(401, e.getRawStatusCode());
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "getOneProduct")
+    void getProductById_whenProductWithId10Exists(MockServer mockServer) {
+        Product expected = new Product();
+        expected.setId("10");
+        expected.setType("CREDIT_CARD");
+        expected.setName("28 Degrees");
+
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+        Product product = new ProductService(restTemplate).getProduct("10");
+
+        assertEquals(expected, product);
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "productDoesNotExist")
+    void getProductById_whenProductWithId11DoesNotExist(MockServer mockServer) {
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+                () -> new ProductService(restTemplate).getProduct("11"));
+        assertEquals(404, e.getRawStatusCode());
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "singleProductnoAuthToken")
+    void getProductById_whenNoAuth(MockServer mockServer) {
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+                () -> new ProductService(restTemplate).getProduct("10"));
+        assertEquals(401, e.getRawStatusCode());
+    }
+}
+```
+
+Generate a new Pact file:
+
+```console
+❯ ./gradlew consumer:test --tests *PactTest
+
+BUILD SUCCESSFUL in 9s
+```
+
+We should now have two new interactions in our pact file.
+
+Let's test the provider. Copy the updated pact file into the provider's pact directory and run the command:
+
+```console
+> ./gradlew consumer:copyPacts
+  
+  BUILD SUCCESSFUL in 1s
+
+❯  ./gradlew provider:test --tests *Pact*Test
+
+...
+...
+
+au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication - get product by ID 10 with no auth token FAILED
+    java.lang.AssertionError at ProductPactProviderTest.java:43
+
+au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication - get all products with no auth token FAILED
+    java.lang.AssertionError at ProductPactProviderTest.java:43
+2020-10-09 15:07:37.909  INFO 17464 --- [extShutdownHook] o.s.s.concurrent.Threa
+6 tests completed, 2 failed
+
+> Task :provider:test FAILED
+
+FAILURE: Build failed with an exception.
+```
+
+Now with the most recently added interactions where we are expecting a response of 401 when no authorization header is sent, we are getting 200...

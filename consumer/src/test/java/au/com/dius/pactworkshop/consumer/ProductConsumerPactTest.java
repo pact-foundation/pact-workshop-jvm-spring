@@ -30,6 +30,7 @@ public class ProductConsumerPactTest {
                 .uponReceiving("get all products")
                 .method("GET")
                 .path("/products")
+                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
                 .willRespondWith()
                 .status(200)
                 .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
@@ -49,10 +50,22 @@ public class ProductConsumerPactTest {
                 .uponReceiving("get all products")
                 .method("GET")
                 .path("/products")
+                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
                 .willRespondWith()
                 .status(200)
                 .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
                 .body("[]")
+                .toPact();
+    }
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact allProductsNoAuthToken(PactDslWithProvider builder) {
+        return builder.given("products exist")
+                .uponReceiving("get all products with no auth token")
+                .method("GET")
+                .path("/products")
+                .willRespondWith()
+                .status(401)
                 .toPact();
     }
 
@@ -62,6 +75,7 @@ public class ProductConsumerPactTest {
                 .uponReceiving("get product with ID 10")
                 .method("GET")
                 .path("/product/10")
+                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
                 .willRespondWith()
                 .status(200)
                 .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
@@ -79,8 +93,20 @@ public class ProductConsumerPactTest {
                 .uponReceiving("get product with ID 11")
                 .method("GET")
                 .path("/product/11")
+                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
                 .willRespondWith()
                 .status(404)
+                .toPact();
+    }
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact singleProductnoAuthToken(PactDslWithProvider builder) {
+        return builder.given("product with ID 10 exists")
+                .uponReceiving("get product by ID 10 with no auth token")
+                .method("GET")
+                .path("/product/10")
+                .willRespondWith()
+                .status(401)
                 .toPact();
     }
 
@@ -113,6 +139,18 @@ public class ProductConsumerPactTest {
     }
 
     @Test
+    @PactTestFor(pactMethod = "allProductsNoAuthToken")
+    void getAllProducts_whenNoAuth(MockServer mockServer) {
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+                () -> new ProductService(restTemplate).getAllProducts());
+        assertEquals(401, e.getRawStatusCode());
+    }
+
+    @Test
     @PactTestFor(pactMethod = "getOneProduct")
     void getProductById_whenProductWithId10Exists(MockServer mockServer) {
         Product expected = new Product();
@@ -138,5 +176,17 @@ public class ProductConsumerPactTest {
         HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
                 () -> new ProductService(restTemplate).getProduct("11"));
         assertEquals(404, e.getRawStatusCode());
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "singleProductnoAuthToken")
+    void getProductById_whenNoAuth(MockServer mockServer) {
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+
+        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+                () -> new ProductService(restTemplate).getProduct("10"));
+        assertEquals(401, e.getRawStatusCode());
     }
 }
