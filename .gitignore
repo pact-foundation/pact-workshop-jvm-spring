@@ -1,8 +1,10 @@
-consumer/.gradle
+.gradle
 build/
 !../gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+
+provider/src/test/resources/pacts
 
 ### STS ###
 .apt_generated
