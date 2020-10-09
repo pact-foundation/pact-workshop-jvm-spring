@@ -26,6 +26,6 @@ public class ProductService {
     }
 
     public Product getProduct(String id) {
-        return restTemplate.getForEntity("/products/{id}", Product.class, id).getBody();
+        return restTemplate.getForEntity("/product/{id}", Product.class, id).getBody();
     }
 }

@@ -375,3 +375,77 @@ au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication 
 The test has failed, as the expected path `/products/{id}` is returning 404. We incorrectly believed our provider was following a RESTful design, but the authors were too lazy to implement a better routing solution 🤷🏻‍♂️.
 
 The correct endpoint which the consumer should call is `/product/{id}`.
+
+## Step 5 - Back to the client we go
+
+We now need to update the consumer client and tests to hit the correct product path.
+
+First, we need to update the GET route for the client:
+
+In `consumer/src/main/au/com/dius/pactworkshop/consumer/ProductService.java`:
+
+```java
+...
+
+public Product getProduct(String id) {
+    return restTemplate.getForEntity("/product/{id}", Product.class, id).getBody();
+}
+```
+
+Then we need to update the Pact test `ID 10 exists` to use the correct endpoint in `path`.
+
+In `consumer/src/test/java/au/com/dius/pactworkshop/consumer/ProductConsumerPactTest.java`:
+
+```java
+@Pact(consumer = "FrontendApplication", provider = "ProductService")
+RequestResponsePact getOneProduct(PactDslWithProvider builder) {
+    return builder.given("product with ID 10 exists")
+            .uponReceiving("get product with ID 10")
+            .method("GET")
+            .path("/product/10")
+            .willRespondWith()
+            .status(200)
+            .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+            .body(newJsonBody(object -> {
+                object.stringType("id", "10");
+                object.stringType("type", "CREDIT_CARD");
+                object.stringType("name", "28 Degrees");
+            }).build())
+            .toPact();
+}
+...
+```
+
+![Pact Verification](diagrams/workshop_step5_pact.svg)
+
+Let's run and generate an updated pact file on the client:
+
+```console
+❯ ./gradlew consumer:test --tests *PactTest
+  
+  BUILD SUCCESSFUL in 7s
+```
+
+
+
+Now we run the provider tests again with the updated contract
+
+Copy the updated contract located in `consumer/build/pacts/FrontendApplication-ProductService.json` to `provider/src/test/resources/pacts/FrontendApplication-Productservice.json` by running the command:
+```console
+> ./gradlew consumer:copyPacts
+  
+  BUILD SUCCESSFUL in 1s
+```
+
+Run the command:
+
+```console
+❯ ./gradlew provider:test --tests *Pact*Test
+
+...
+...
+
+BUILD SUCCESSFUL in 10s
+```
+
+Yay - green ✅!

@@ -45,7 +45,7 @@ public class ProductConsumerPactTest {
         return builder.given("product with ID 10 exists")
                 .uponReceiving("get product with ID 10")
                 .method("GET")
-                .path("/products/10")
+                .path("/product/10")
                 .willRespondWith()
                 .status(200)
                 .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
