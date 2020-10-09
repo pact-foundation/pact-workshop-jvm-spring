@@ -544,3 +544,52 @@ FAILURE: Build failed with an exception.
 We expected this failure, because the product we are requesting does in fact exist! What we want to test for, is what happens if there is a different *state* on the Provider. This is what is referred to as "Provider states", and how Pact gets around test ordering and related issues.
 
 We could resolve this by updating our consumer test to use a known non-existent product, but it's worth understanding how Provider states work more generally.
+
+## Step 7 - Adding the missing states
+
+Our code already deals with missing users and sends a `404` response, however our test data fixture always has product ID 10 and 11 in our database.
+
+In this step, we will add state handlers to our provider Pact verifications, which will update the state of our data store depending on which states the consumers require.
+
+States are invoked prior to the actual test function being invoked. You can see the full [lifecycle here](https://github.com/pact-foundation/pact-go#lifecycle-of-a-provider-verification).
+
+We're going to add handlers for all our states:
+
+- products exist
+- no products exist
+- product with ID 10 exists
+- product with ID 11 does not exist
+
+Let's open up our provider Pact verifications in `provider/src/test/java/au/com/dius/pactworkshop/provider/ProductPactProviderTest.java`:
+
+```java
+    @State("products exist")
+    void toProductsExistState() {
+        when(productRepository.fetchAll()).thenReturn(
+                List.of(new Product("09", "CREDIT_CARD", "Gem Visa", "v1"),
+                        new Product("10", "CREDIT_CARD", "28 Degrees", "v1")));
+    }
+
+    @State({
+            "no products exist",
+            "product with ID 11 does not exist"
+    })
+    void toNoProductsExistState() {
+        when(productRepository.fetchAll()).thenReturn(Collections.emptyList());
+    }
+
+    @State("product with ID 10 exists")
+    void toProductWithIdTenExistsState() {
+        when(productRepository.getById("10")).thenReturn(Optional.of(new Product("10", "CREDIT_CARD", "28 Degrees", "v1")));
+    }
+```
+
+Let's see how we go now:
+
+```console
+❯ ./gradlew provider:test --tests *Pact*Test
+
+BUILD SUCCESSFUL in 11s
+```
+
+_NOTE_: The states are not necessarily a 1 to 1 mapping with the consumer contract tests. You can reuse states amongst different tests. In this scenario we could have used `no products exist` for both tests which would have equally been valid.
