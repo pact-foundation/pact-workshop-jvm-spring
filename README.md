@@ -921,3 +921,43 @@ FAILURE: Build failed with an exception.
 ```
 
 Oh, dear. _More_ tests are failing. Can you understand why?
+
+## Step 10 - Request Filters on the Provider
+
+Because our pact file has static data in it, our bearer token is now out of date, so when Pact verification passes it to the Provider we get a `401`. There are multiple ways to resolve this - mocking or stubbing out the authentication component is a common one. In our use case, we are going to use a process referred to as _Request Filtering_, using a `RequestFilter`.
+
+_NOTE_: This is an advanced concept and should be used carefully, as it has the potential to invalidate a contract by bypassing its constraints. See https://docs.pact.io/implementation_guides/jvm/provider/junit5/#modifying-the-requests-before-they-are-sent for more details on this.
+
+The approach we are going to take to inject the header is as follows:
+
+1. If we receive any Authorization header, we override the incoming request with a valid (in time) Authorization header, and continue with whatever call was being made
+1. If we don't receive an Authorization header, we do nothing
+
+_NOTE_: We are not considering the `403` scenario in this example.
+
+In `provider/src/test/java/au/com/dius/pactworkshop/provider/ProductPactProviderTest.java`:
+
+```java
+    @TestTemplate
+    @ExtendWith(PactVerificationInvocationContextProvider.class)
+    void verifyPact(PactVerificationContext context, HttpRequest request) {
+        replaceAuthHeader(request);
+        context.verifyInteraction();
+    }
+
+    private void replaceAuthHeader(HttpRequest request) {
+        if (request.containsHeader("Authorization")) {
+            String header = "Bearer " + new SimpleDateFormat("yyyy-MM-dd'T'HH:mm").format(new Date());
+            request.removeHeaders("Authorization");
+            request.addHeader("Authorization", header);
+        }
+    }
+```
+
+We can now run the Provider tests
+
+```console
+❯ ./gradlew provider:test --tests *Pact*Test
+
+BUILD SUCCESSFUL in 1s
+```
