@@ -961,3 +961,197 @@ We can now run the Provider tests
 
 BUILD SUCCESSFUL in 1s
 ```
+[Broker collaboration Workflow](diagrams/workshop_step10_broker.svg)
+
+We've been publishing our pacts from the consumer project by essentially sharing the file system with the provider. But this is not very manageable when you have multiple teams contributing to the code base, and pushing to CI. We can use a [Pact Broker](https://pactflow.io) to do this instead.
+
+Using a broker simplifies the management of pacts and adds a number of useful features, including some safety enhancements for continuous delivery which we'll see shortly.
+
+In this workshop we will be using the open source Pact broker.
+
+### Running the Pact Broker with docker-compose
+
+In the root directory, run:
+
+```console
+docker-compose up
+```
+
+### Publish contracts from consumer
+
+First, in the consumer project we need to tell Pact about our broker.
+
+In `consumer/build.gradle`:
+
+```groovy
+...
+...
+
+def getGitHash = { ->
+	def stdout = new ByteArrayOutputStream()
+	exec {
+		commandLine 'git', 'rev-parse', '--short', 'HEAD'
+		standardOutput = stdout
+	}
+	return stdout.toString().trim()
+}
+
+def getGitBranch = { ->
+	def stdout = new ByteArrayOutputStream()
+	exec {
+		commandLine 'git', 'rev-parse', '--abbrev-ref', 'HEAD'
+		standardOutput = stdout
+	}
+	return stdout.toString().trim()
+}
+
+static def getOrDefault(env, defaultVal) {
+	def val = System.getenv(env)
+	if (val == null || val.isEmpty()) {
+		val = defaultVal
+	}
+	return val
+}
+
+pact {
+	publish {
+		pactDirectory = 'consumer/build/pacts'
+		pactBrokerUrl = 'http://localhost:8000/'
+		pactBrokerUsername = getOrDefault('PACT_BROKER_USERNAME', 'pact_workshop')
+		pactBrokerPassword = getOrDefault('PACT_BROKER_PASSWORD', 'pact_workshop')
+		tags = [getGitBranch(), 'test', 'prod']
+		consumerVersion = getGitHash()
+	}
+}
+```
+
+Now run
+
+```console
+❯ ./gradlew consumer:test --tests *PactTest* pactPublish
+  
+  > Task :consumer:pactPublish
+  Publishing 'FrontendApplication-ProductService.json' with tags step11, test, prod ... OK
+  
+  BUILD SUCCESSFUL in 11s
+
+```
+*NOTE*: For real projects, you should only publish pacts from CI builds
+
+Have a browse around the broker on http://localhost:8000 (with username/password: `pact_workshop`/`pact_workshop`) and see your newly published contract!
+
+### Verify contracts on Provider
+
+All we need to do for the provider is update where it finds its pacts, from local URLs, to one from a broker.
+
+In `provider/src/test/java/au/com/dius/pactworkshop/provider/ProductPactProviderTest.java`:
+
+```java
+//replace
+@PactFolder("pacts")
+
+// with
+@PactBroker(
+        host = "localhost",
+        port = "8000",
+        authentication = @PactBrokerAuth(username = "pact_workshop", password = "pact_workshop")
+)
+```
+In `provider/build.gradle`:
+
+```groovy
+...
+...
+
+
+def getGitHash = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+def getGitBranch = { ->
+    def stdout = new ByteArrayOutputStream()
+    exec {
+        commandLine 'git', 'rev-parse', '--abbrev-ref', 'HEAD'
+        standardOutput = stdout
+    }
+    return stdout.toString().trim()
+}
+
+test {
+    useJUnitPlatform()
+
+    if (System.getProperty('pactPublishResults') == 'true') {
+        systemProperty 'pact.provider.version', getGitHash()
+        systemProperty 'pact.provider.tag', getGitBranch()
+        systemProperty 'pact.verifier.publishResults', 'true'
+    }
+}
+```
+
+Let's run the provider verification one last time after this change:
+
+```console
+❯ ./gradlew -DpactPublishResults=true provider:test --tests *Pact*Test
+
+BUILD SUCCESSFUL in 16s
+```
+*NOTE*: For real projects, you should only publish verification results from CI builds
+
+As part of this process, the results of the verification - the outcome (boolean) and the detailed information about the failures at the interaction level - are published to the Broker also.
+
+This is one of the Broker's more powerful features. Referred to as [Verifications](https://docs.pact.io/pact_broker/advanced_topics/provider_verification_results), it allows providers to report back the status of a verification to the broker. You'll get a quick view of the status of each consumer and provider on a nice dashboard. But, it is much more important than this!
+
+### Can I deploy?
+
+With just a simple use of the `pact-broker` [can-i-deploy tool](https://docs.pact.io/pact_broker/advanced_topics/provider_verification_results) - the Broker will determine if a consumer or provider is safe to release to the specified environment.
+
+You can run the `pact-broker can-i-deploy` checks as follows:
+
+```console
+❯ docker run --rm --network host \
+  	-e PACT_BROKER_BASE_URL=http://localhost:8000 \
+  	-e PACT_BROKER_USERNAME=pact_workshop \
+  	-e PACT_BROKER_PASSWORD=pact_workshop \
+  	pactfoundation/pact-cli:latest \
+  	broker can-i-deploy \
+  	--pacticipant FrontendApplication \
+  	--latest
+
+
+Computer says yes \o/
+
+CONSUMER            | C.VERSION | PROVIDER       | P.VERSION | SUCCESS?
+--------------------|-----------|----------------|-----------|---------
+FrontendApplication | 2955ca5   | ProductService | 2955ca5   | true
+
+All required verification results are published and successful
+
+
+----------------------------
+
+❯ docker run --rm --network host \
+  	-e PACT_BROKER_BASE_URL=http://localhost:8000 \
+  	-e PACT_BROKER_USERNAME=pact_workshop \
+  	-e PACT_BROKER_PASSWORD=pact_workshop \
+  	pactfoundation/pact-cli:latest \
+  	broker can-i-deploy \
+  	--pacticipant ProductService \
+  	--latest
+
+Computer says yes \o/
+
+CONSUMER            | C.VERSION | PROVIDER       | P.VERSION | SUCCESS?
+--------------------|-----------|----------------|-----------|---------
+FrontendApplication | 2955ca5   | ProductService | 2955ca5   | true
+
+All required verification results are published and successful
+```
+
+
+
+That's it - you're now a Pact pro. Go build 🔨
