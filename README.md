@@ -849,3 +849,75 @@ FAILURE: Build failed with an exception.
 ```
 
 Now with the most recently added interactions where we are expecting a response of 401 when no authorization header is sent, we are getting 200...
+
+## Step 9 - Implement authorisation on the provider
+
+We will add a filter to check the Authorization header and deny the request with `401` if the token is older than 1 hour.
+
+In `provider/src/main/java/au/com/dius/pactworkshop/provider/AuthFilter.java`
+
+```java
+@Component
+public class AuthFilter implements Filter {
+
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        String authHeader = ((HttpServletRequest) request).getHeader("Authorization");
+        if (authHeader == null) {
+            ((HttpServletResponse) response).sendError(401, "Unauthorized");
+            return;
+        }
+        authHeader = authHeader.replaceAll("Bearer ", "");
+        if (!isValidAuthTimestamp(authHeader)) {
+            ((HttpServletResponse) response).sendError(401, "Unauthorized");
+            return;
+        }
+
+        chain.doFilter(request, response);
+    }
+
+    private boolean isValidAuthTimestamp(String timestamp) {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm");
+        try {
+            Date headerDate = formatter.parse(timestamp);
+            long diff = (System.currentTimeMillis() - headerDate.getTime()) / 1000;
+            return diff >= 0 && diff <= 3600;
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+            return false;
+    }
+}
+```
+
+This means that a client must present an HTTP `Authorization` header that looks as follows:
+
+```
+Authorization: Bearer 2006-01-02T15:04
+```
+
+Let's test this out:
+
+```console
+❯ ./gradlew provider:test --tests *Pact*Test
+
+au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication - get all products FAILED
+    java.lang.AssertionError at ProductPactProviderTest.java:43
+
+au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication - get product with ID 10 FAILED
+    java.lang.AssertionError at ProductPactProviderTest.java:43
+
+au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication - get product with ID 11 FAILED
+    java.lang.AssertionError at ProductPactProviderTest.java:43
+
+au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication - get all products FAILED
+    java.lang.AssertionError at ProductPactProviderTest.java:43
+2020-10-12 10:28:12.744  INFO 17984 --- [extShutdownHook] o.s.s.concurrent.Threa
+6 tests completed, 4 failed
+
+> Task :provider:test FAILED
+
+FAILURE: Build failed with an exception.
+```
+
+Oh, dear. _More_ tests are failing. Can you understand why?
