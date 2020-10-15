@@ -1,0 +1,2 @@
+server:
+  port: ${PROVIDER_PORT:8085}
