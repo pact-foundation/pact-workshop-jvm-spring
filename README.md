@@ -180,3 +180,123 @@ Let's see what happens!
 Doh! We are getting 404 every time we try to view detailed product information. On closer inspection, the provider only knows about `/product/{id}` and `/products`.
 
 We need to have a conversation about what the endpoint should be, but first...
+
+## Step 3 - Pact to the rescue
+
+Unit tests are written and executed in isolation of any other services. When we write tests for code that talk to other services, they are built on trust that the contracts are upheld. There is no way to validate that the consumer and provider can communicate correctly.
+
+> An integration contract test is a test at the boundary of an external service verifying that it meets the contract expected by a consuming service — [Martin Fowler](https://martinfowler.com/bliki/IntegrationContractTest.html)
+
+Adding contract tests via Pact would have highlighted the `/product/{id}` endpoint was incorrect.
+
+Let us add Pact to the project and write a consumer pact test for the `GET /products/{id}` endpoint.
+
+*Provider states* is an important concept of Pact that we need to introduce. These states help define the state that the provider should be in for specific interactions. For the moment, we will initially be testing the following states:
+
+- `product with ID 10 exists`
+- `products exist`
+
+The consumer can define the state of an interaction using the `given` property.
+
+Note how similar it looks to our unit test:
+
+In `consumer/src/test/java/au/com/dius/pactworkshop/consumer/ProductConsumerPactTest.java`:
+
+```java
+@ExtendWith(PactConsumerTestExt.class)
+public class ProductConsumerPactTest {
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact getAllProducts(PactDslWithProvider builder) {
+        return builder.given("products exist")
+                .uponReceiving("get all products")
+                .method("GET")
+                .path("/products")
+                .willRespondWith()
+                .status(200)
+                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .body(newJsonArrayMinLike(2, array -> {
+                    array.object(object -> {
+                        object.stringType("id", "09");
+                        object.stringType("type", "CREDIT_CARD");
+                        object.stringType("name", "Gem Visa");
+                    });
+                }).build())
+                .toPact();
+    }
+
+    @Pact(consumer = "FrontendApplication", provider = "ProductService")
+    RequestResponsePact getOneProduct(PactDslWithProvider builder) {
+        return builder.given("product with ID 10 exists")
+                .uponReceiving("get product with ID 10")
+                .method("GET")
+                .path("/products/10")
+                .willRespondWith()
+                .status(200)
+                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .body(newJsonBody(object -> {
+                    object.stringType("id", "10");
+                    object.stringType("type", "CREDIT_CARD");
+                    object.stringType("name", "28 Degrees");
+                }).build())
+                .toPact();
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "getAllProducts")
+    void getAllProducts_whenProductsExist(MockServer mockServer) {
+        Product product = new Product();
+        product.setId("09");
+        product.setType("CREDIT_CARD");
+        product.setName("Gem Visa");
+        List<Product> expected = List.of(product, product);
+
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+        List<Product> products = new ProductService(restTemplate).getAllProducts();
+
+        assertEquals(expected, products);
+    }
+
+    @Test
+    @PactTestFor(pactMethod = "getOneProduct")
+    void getProductById_whenProductWithId10Exists(MockServer mockServer) {
+        Product expected = new Product();
+        expected.setId("10");
+        expected.setType("CREDIT_CARD");
+        expected.setName("28 Degrees");
+
+        RestTemplate restTemplate = new RestTemplateBuilder()
+                .rootUri(mockServer.getUrl())
+                .build();
+        Product product = new ProductService(restTemplate).getProduct("10");
+
+        assertEquals(expected, product);
+    }
+}
+```
+
+
+![Test using Pact](diagrams/workshop_step3_pact.svg)
+
+This test starts a mock server on a random port that acts as our provider service. To get this to work we update the URL in the `Client` that we create, after initialising Pact.
+
+To run only the Pact tests:
+
+```console
+> ./gradlew consumer:test --tests *PactTest
+
+```
+
+Running this test still passes, but it creates a pact file which we can use to validate our assumptions on the provider side, and have conversation around.
+
+```console
+❯ ./gradlew consumer:test --tests *PactTest
+  
+  BUILD SUCCESSFUL in 6s
+```
+
+A pact file should have been generated in *consumer/build/pacts/FrontendApplication-ProductService.json*
+
+*NOTE*: even if the API client had been graciously provided for us by our Provider Team, it doesn't mean that we shouldn't write contract tests - because the version of the client we have may not always be in sync with the deployed API - and also because we will write tests on the output appropriate to our specific needs.
