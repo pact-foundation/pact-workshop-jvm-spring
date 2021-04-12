@@ -1,0 +1,6 @@
+server:
+  port: ${PROVIDER_PORT:8085}
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
