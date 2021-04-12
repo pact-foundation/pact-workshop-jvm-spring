@@ -1,0 +1,5 @@
+rootProject.name = 'pact-workshop-jvm-spring'
+
+include 'consumer'
+include 'provider'
+
