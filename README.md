@@ -639,7 +639,7 @@ public class ProductService {
 }
 ```
 
-In `consumer/src/api.pact.spec.js`:
+In `consumer/src/test/java/au/com/dius/pactworkshop/consumer/ProductConsumerPactTest.java`:
 
 ```java
 @ExtendWith(PactConsumerTestExt.class)
