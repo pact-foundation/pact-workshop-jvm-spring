@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -49,7 +50,7 @@ class ProductServiceTest {
                                 "{\"id\":\"10\",\"type\":\"CREDIT_CARD\",\"name\":\"28 Degrees\",\"version\":\"v1\"}"+
                                 "]")));
 
-        List<Product> expected = List.of(new Product("9", "CREDIT_CARD", "GEM Visa", "v2"),
+        List<Product> expected = Arrays.asList(new Product("9", "CREDIT_CARD", "GEM Visa", "v2"),
                 new Product("10", "CREDIT_CARD", "28 Degrees", "v1"));
 
         List<Product> products = productService.getAllProducts();
