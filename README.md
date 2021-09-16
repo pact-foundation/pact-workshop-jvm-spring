@@ -409,3 +409,5 @@ au.com.dius.pactworkshop.provider.ProductPactProviderTest > FrontendApplication 
 The test has failed, as the expected path `/products/{id}` is returning 404. We incorrectly believed our provider was following a RESTful design, but the authors were too lazy to implement a better routing solution 🤷🏻‍♂️.
 
 The correct endpoint which the consumer should call is `/product/{id}`.
+
+Move on to [step 5](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step5#step-5---back-to-the-client-we-go)
