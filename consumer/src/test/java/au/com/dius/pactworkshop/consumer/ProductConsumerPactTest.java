@@ -13,6 +13,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +34,7 @@ public class ProductConsumerPactTest {
                 .path("/products")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body(newJsonArrayMinLike(2, array ->
                         array.object(object -> {
                             object.stringType("id", "09");
@@ -51,7 +53,7 @@ public class ProductConsumerPactTest {
                 .path("/products")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body("[]")
                 .toPact();
     }
@@ -64,7 +66,7 @@ public class ProductConsumerPactTest {
                 .path("/product/10")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body(newJsonBody(object -> {
                     object.stringType("id", "10");
                     object.stringType("type", "CREDIT_CARD");
@@ -91,7 +93,7 @@ public class ProductConsumerPactTest {
         product.setId("09");
         product.setType("CREDIT_CARD");
         product.setName("Gem Visa");
-        List<Product> expected = List.of(product, product);
+        List<Product> expected = Arrays.asList(product, product);
 
         RestTemplate restTemplate = new RestTemplateBuilder()
                 .rootUri(mockServer.getUrl())
@@ -138,5 +140,11 @@ public class ProductConsumerPactTest {
         HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
                 () -> new ProductService(restTemplate).getProduct("11"));
         assertEquals(404, e.getRawStatusCode());
+    }
+
+    private Map<String, String> headers() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Content-Type", "application/json; charset=utf-8");
+      return headers;
     }
 }
