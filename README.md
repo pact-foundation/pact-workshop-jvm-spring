@@ -509,7 +509,7 @@ In `consumer/src/test/java/au/com/dius/pactworkshop/consumer/ProductConsumerPact
                 .path("/products")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body("[]")
                 .toPact();
     }
@@ -557,7 +557,15 @@ Notice that our new tests look almost identical to our previous tests, and only 
   BUILD SUCCESSFUL in 1s
 ```
 
-What does our provider have to say about this new test. Again, copy the updated pact file into the provider's pact directory and run the command:
+What does our provider have to say about this new test. Again, copy the updated pact file into the provider's pact directory:
+
+```console
+> ./gradlew consumer:copyPacts
+  
+  BUILD SUCCESSFUL in 1s
+```
+
+and run the command:
 
 ```console
 ❯ ./gradlew provider:test --tests *Pact*Test
@@ -582,3 +590,5 @@ FAILURE: Build failed with an exception.
 We expected this failure, because the product we are requesting does in fact exist! What we want to test for, is what happens if there is a different *state* on the Provider. This is what is referred to as "Provider states", and how Pact gets around test ordering and related issues.
 
 We could resolve this by updating our consumer test to use a known non-existent product, but it's worth understanding how Provider states work more generally.
+
+Move on to  [step 7](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step7#step-7---adding-the-missing-states)
