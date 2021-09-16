@@ -1022,6 +1022,8 @@ We can now run the Provider tests
 BUILD SUCCESSFUL in 1s
 ```
 
+Move on to [step 11](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step11#step-11---using-a-pact-broker)
+
 ## Step 11 - Using a Pact Broker
 
 ![Broker collaboration Workflow](diagrams/workshop_step10_broker.svg)
