@@ -1,8 +1,30 @@
 # Example Spring Boot project for the Pact workshop
 
+This workshop should take about 2 hours, depending on how deep you want to go into each topic.
+
 This workshop is setup with a number of steps that can be run through. Each step is in a branch, so to run through a
 step of the workshop just check out the branch for that step (i.e. `git checkout step1`).
 
+## Requirements
+
+* JDK 8+
+* Docker for step 11
+
+## Workshop outline:
+
+* [step 1: **Simple Consumer calling Provider**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step1#step-1---simple-consumer-calling-provider)
+* [step 2: **Client Tested but integration fails**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step2#step-2---client-tested-but-integration-fails)
+* [step 3: **Pact to the rescue**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step3#step-3---pact-to-the-rescue)
+* [step 4: **Verify the provider**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step4#step-4---verify-the-provider)
+* [step 5: **Back to the client we go**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step5#step-5---back-to-the-client-we-go)
+* [step 6: **Consumer updates contract for missing products**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step6#step-6---consumer-updates-contract-for-missing-products)
+* [step 7: **Adding the missing states**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step7#step-7---adding-the-missing-states)
+* [step 8: **Authorization**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step8#step-8---authorization)
+* [step 9: **Implement authorisation on the provider**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step9#step-9---implement-authorisation-on-the-provider)
+* [step 10: **Request Filters on the Provider**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step10#step-10---request-filters-on-the-provider)
+* [step 11: **Using a Pact Broker**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step11#step-11---using-a-pact-broker)
+
+_NOTE: Each step is tied to, and must be run within, a git branch, allowing you to progress through each stage incrementally. For example, to move to step 2 run the following: git checkout step2_
 
 ## Scenario
 
@@ -58,9 +80,11 @@ We can run the client with `./gradlew consumer:bootRun` - it should fail with th
 Caused by: org.springframework.web.client.ResourceAccessException: I/O error on GET request for "http://localhost:8085/products": Connection refused: connect; nested exception is java.net.ConnectException: Connection refused: connect
 ```
 
+Move on to [step 2](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step2#step-2---client-tested-but-integration-fails)
+
 ## Step 2 - Client Tested but integration fails
 
-Now lets create a basic test for our API client. We're going to check 2 things:
+Now let's create a basic test for our API client. We're going to check 2 things:
 
 1. That our client code hits the expected endpoint
 1. That the response is marshalled into an object that is usable, with the correct ID
@@ -70,60 +94,60 @@ You can see the client interface test we created in `consumer/src/test/java/au/c
 ```java
 class ProductServiceTest {
 
-    private WireMockServer wireMockServer;
-    private ProductService productService;
+  private WireMockServer wireMockServer;
+  private ProductService productService;
 
-    @BeforeEach
-    void setUp() {
-        wireMockServer = new WireMockServer(options().dynamicPort());
+  @BeforeEach
+  void setUp() {
+    wireMockServer = new WireMockServer(options().dynamicPort());
 
-        wireMockServer.start();
+    wireMockServer.start();
 
-        RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(wireMockServer.baseUrl())
-                .build();
+    RestTemplate restTemplate = new RestTemplateBuilder()
+      .rootUri(wireMockServer.baseUrl())
+      .build();
 
-        productService = new ProductService(restTemplate);
-    }
+    productService = new ProductService(restTemplate);
+  }
 
-    @AfterEach
-    void tearDown() {
-        wireMockServer.stop();
-    }
+  @AfterEach
+  void tearDown() {
+    wireMockServer.stop();
+  }
 
-    @Test
-    void getAllProducts() {
-        wireMockServer.stubFor(get(urlPathEqualTo("/products"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("[" +
-                                "{\"id\":\"9\",\"type\":\"CREDIT_CARD\",\"name\":\"GEM Visa\",\"version\":\"v2\"},"+
-                                "{\"id\":\"10\",\"type\":\"CREDIT_CARD\",\"name\":\"28 Degrees\",\"version\":\"v1\"}"+
-                                "]")));
+  @Test
+  void getAllProducts() {
+    wireMockServer.stubFor(get(urlPathEqualTo("/products"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withHeader("Content-Type", "application/json")
+        .withBody("[" +
+          "{\"id\":\"9\",\"type\":\"CREDIT_CARD\",\"name\":\"GEM Visa\",\"version\":\"v2\"},"+
+          "{\"id\":\"10\",\"type\":\"CREDIT_CARD\",\"name\":\"28 Degrees\",\"version\":\"v1\"}"+
+          "]")));
 
-        List<Product> expected = List.of(new Product("9", "CREDIT_CARD", "GEM Visa", "v2"),
-                new Product("10", "CREDIT_CARD", "28 Degrees", "v1"));
+    List<Product> expected = Arrays.asList(new Product("9", "CREDIT_CARD", "GEM Visa", "v2"),
+      new Product("10", "CREDIT_CARD", "28 Degrees", "v1"));
 
-        List<Product> products = productService.getAllProducts();
+    List<Product> products = productService.getAllProducts();
 
-        assertEquals(expected, products);
-    }
+    assertEquals(expected, products);
+  }
 
-    @Test
-    void getProductById() {
-        wireMockServer.stubFor(get(urlPathEqualTo("/products/50"))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody("{\"id\":\"50\",\"type\":\"CREDIT_CARD\",\"name\":\"28 Degrees\",\"version\":\"v1\"}")));
+  @Test
+  void getProductById() {
+    wireMockServer.stubFor(get(urlPathEqualTo("/products/50"))
+      .willReturn(aResponse()
+        .withStatus(200)
+        .withHeader("Content-Type", "application/json")
+        .withBody("{\"id\":\"50\",\"type\":\"CREDIT_CARD\",\"name\":\"28 Degrees\",\"version\":\"v1\"}")));
 
-        Product expected = new Product("50", "CREDIT_CARD", "28 Degrees", "v1");
+    Product expected = new Product("50", "CREDIT_CARD", "28 Degrees", "v1");
 
-        Product product = productService.getProduct("50");
+    Product product = productService.getProduct("50");
 
-        assertEquals(expected, product);
-    }
+    assertEquals(expected, product);
+  }
 }
 ```
 
@@ -181,6 +205,8 @@ Doh! We are getting 404 every time we try to view detailed product information. 
 
 We need to have a conversation about what the endpoint should be, but first...
 
+Move on to [step 3](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step3#step-3---pact-to-the-rescue)
+
 ## Step 3 - Pact to the rescue
 
 Unit tests are written and executed in isolation of any other services. When we write tests for code that talk to other services, they are built on trust that the contracts are upheld. There is no way to validate that the consumer and provider can communicate correctly.
@@ -205,75 +231,81 @@ In `consumer/src/test/java/au/com/dius/pactworkshop/consumer/ProductConsumerPact
 ```java
 @ExtendWith(PactConsumerTestExt.class)
 public class ProductConsumerPactTest {
-
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact getAllProducts(PactDslWithProvider builder) {
+  
+      @Pact(consumer = "FrontendApplication", provider = "ProductService")
+      RequestResponsePact getAllProducts(PactDslWithProvider builder) {
         return builder.given("products exist")
-                .uponReceiving("get all products")
-                .method("GET")
-                .path("/products")
-                .willRespondWith()
-                .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
-                .body(newJsonArrayMinLike(2, array -> {
-                    array.object(object -> {
-                        object.stringType("id", "09");
-                        object.stringType("type", "CREDIT_CARD");
-                        object.stringType("name", "Gem Visa");
-                    });
-                }).build())
-                .toPact();
-    }
-
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact getOneProduct(PactDslWithProvider builder) {
+          .uponReceiving("get all products")
+          .method("GET")
+          .path("/products")
+          .willRespondWith()
+          .status(200)
+          .headers(headers())
+          .body(newJsonArrayMinLike(2, array ->
+            array.object(object -> {
+              object.stringType("id", "09");
+              object.stringType("type", "CREDIT_CARD");
+              object.stringType("name", "Gem Visa");
+            })
+          ).build())
+          .toPact();
+      }
+    
+      @Pact(consumer = "FrontendApplication", provider = "ProductService")
+      RequestResponsePact getOneProduct(PactDslWithProvider builder) {
         return builder.given("product with ID 10 exists")
-                .uponReceiving("get product with ID 10")
-                .method("GET")
-                .path("/products/10")
-                .willRespondWith()
-                .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
-                .body(newJsonBody(object -> {
-                    object.stringType("id", "10");
-                    object.stringType("type", "CREDIT_CARD");
-                    object.stringType("name", "28 Degrees");
-                }).build())
-                .toPact();
-    }
-
-    @Test
-    @PactTestFor(pactMethod = "getAllProducts")
-    void getAllProducts_whenProductsExist(MockServer mockServer) {
+          .uponReceiving("get product with ID 10")
+          .method("GET")
+          .path("/products/10")
+          .willRespondWith()
+          .status(200)
+          .headers(headers())
+          .body(newJsonBody(object -> {
+            object.stringType("id", "10");
+            object.stringType("type", "CREDIT_CARD");
+            object.stringType("name", "28 Degrees");
+          }).build())
+          .toPact();
+      }
+    
+      @Test
+      @PactTestFor(pactMethod = "getAllProducts")
+      void getAllProducts_whenProductsExist(MockServer mockServer) {
         Product product = new Product();
         product.setId("09");
         product.setType("CREDIT_CARD");
         product.setName("Gem Visa");
-        List<Product> expected = List.of(product, product);
-
+        List<Product> expected = Arrays.asList(product, product);
+    
         RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
+          .rootUri(mockServer.getUrl())
+          .build();
         List<Product> products = new ProductService(restTemplate).getAllProducts();
-
+    
         assertEquals(expected, products);
-    }
-
-    @Test
-    @PactTestFor(pactMethod = "getOneProduct")
-    void getProductById_whenProductWithId10Exists(MockServer mockServer) {
+      }
+    
+      @Test
+      @PactTestFor(pactMethod = "getOneProduct")
+      void getProductById_whenProductWithId10Exists(MockServer mockServer) {
         Product expected = new Product();
         expected.setId("10");
         expected.setType("CREDIT_CARD");
         expected.setName("28 Degrees");
-
+    
         RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
+          .rootUri(mockServer.getUrl())
+          .build();
         Product product = new ProductService(restTemplate).getProduct("10");
-
+    
         assertEquals(expected, product);
-    }
+      }
+    
+      private Map<String, String> headers() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json; charset=utf-8");
+        return headers;
+      }
 }
 ```
 
@@ -300,6 +332,8 @@ Running this test still passes, but it creates a pact file which we can use to v
 A pact file should have been generated in *consumer/build/pacts/FrontendApplication-ProductService.json*
 
 *NOTE*: even if the API client had been graciously provided for us by our Provider Team, it doesn't mean that we shouldn't write contract tests - because the version of the client we have may not always be in sync with the deployed API - and also because we will write tests on the output appropriate to our specific needs.
+
+Move on to [step 4](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step4#step-4---verify-the-provider)
 
 ## Step 4 - Verify the provider
 
@@ -376,6 +410,8 @@ The test has failed, as the expected path `/products/{id}` is returning 404. We 
 
 The correct endpoint which the consumer should call is `/product/{id}`.
 
+Move on to [step 5](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step5#step-5---back-to-the-client-we-go)
+
 ## Step 5 - Back to the client we go
 
 We now need to update the consumer client and tests to hit the correct product path.
@@ -405,7 +441,7 @@ RequestResponsePact getOneProduct(PactDslWithProvider builder) {
             .path("/product/10")
             .willRespondWith()
             .status(200)
-            .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+            .headers(headers())
             .body(newJsonBody(object -> {
                 object.stringType("id", "10");
                 object.stringType("type", "CREDIT_CARD");
@@ -450,6 +486,8 @@ BUILD SUCCESSFUL in 10s
 
 Yay - green ✅!
 
+Move on to [step 6](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step6#step-6---consumer-updates-contract-for-missing-products)
+
 ## Step 6 - Consumer updates contract for missing products
 
 We're now going to add 2 more scenarios for the contract
@@ -471,7 +509,7 @@ In `consumer/src/test/java/au/com/dius/pactworkshop/consumer/ProductConsumerPact
                 .path("/products")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body("[]")
                 .toPact();
     }
@@ -519,7 +557,15 @@ Notice that our new tests look almost identical to our previous tests, and only 
   BUILD SUCCESSFUL in 1s
 ```
 
-What does our provider have to say about this new test. Again, copy the updated pact file into the provider's pact directory and run the command:
+What does our provider have to say about this new test. Again, copy the updated pact file into the provider's pact directory:
+
+```console
+> ./gradlew consumer:copyPacts
+  
+  BUILD SUCCESSFUL in 1s
+```
+
+and run the command:
 
 ```console
 ❯ ./gradlew provider:test --tests *Pact*Test
@@ -545,6 +591,8 @@ We expected this failure, because the product we are requesting does in fact exi
 
 We could resolve this by updating our consumer test to use a known non-existent product, but it's worth understanding how Provider states work more generally.
 
+Move on to [step 7](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step7#step-7---adding-the-missing-states)
+
 ## Step 7 - Adding the missing states
 
 Our code already deals with missing users and sends a `404` response, however our test data fixture always has product ID 10 and 11 in our database.
@@ -565,9 +613,9 @@ Let's open up our provider Pact verifications in `provider/src/test/java/au/com/
 ```java
     @State("products exist")
     void toProductsExistState() {
-        when(productRepository.fetchAll()).thenReturn(
-                List.of(new Product("09", "CREDIT_CARD", "Gem Visa", "v1"),
-                        new Product("10", "CREDIT_CARD", "28 Degrees", "v1")));
+      when(productRepository.fetchAll()).thenReturn(
+          Arrays.asList(new Product("09", "CREDIT_CARD", "Gem Visa", "v1"),
+              new Product("10", "CREDIT_CARD", "28 Degrees", "v1")));
     }
 
     @State({
@@ -593,6 +641,8 @@ BUILD SUCCESSFUL in 11s
 ```
 
 _NOTE_: The states are not necessarily a 1 to 1 mapping with the consumer contract tests. You can reuse states amongst different tests. In this scenario we could have used `no products exist` for both tests which would have equally been valid.
+
+Move on to [step 8](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step8#step-8---authorization)
 
 ## Step 8 - Authorization
 
@@ -645,171 +695,177 @@ In `consumer/src/test/java/au/com/dius/pactworkshop/consumer/ProductConsumerPact
 @ExtendWith(PactConsumerTestExt.class)
 public class ProductConsumerPactTest {
 
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact getAllProducts(PactDslWithProvider builder) {
-        return builder.given("products exist")
-                .uponReceiving("get all products")
-                .method("GET")
-                .path("/products")
-                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
-                .willRespondWith()
-                .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
-                .body(newJsonArrayMinLike(2, array ->
-                        array.object(object -> {
-                            object.stringType("id", "09");
-                            object.stringType("type", "CREDIT_CARD");
-                            object.stringType("name", "Gem Visa");
-                        })
-                ).build())
-                .toPact();
-    }
+  @Pact(consumer = "FrontendApplication", provider = "ProductService")
+  RequestResponsePact getAllProducts(PactDslWithProvider builder) {
+    return builder.given("products exist")
+      .uponReceiving("get all products")
+      .method("GET")
+      .path("/products")
+      .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+      .willRespondWith()
+      .status(200)
+      .headers(headers())
+      .body(newJsonArrayMinLike(2, array ->
+        array.object(object -> {
+          object.stringType("id", "09");
+          object.stringType("type", "CREDIT_CARD");
+          object.stringType("name", "Gem Visa");
+        })
+      ).build())
+      .toPact();
+  }
 
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact noProductsExist(PactDslWithProvider builder) {
-        return builder.given("no products exist")
-                .uponReceiving("get all products")
-                .method("GET")
-                .path("/products")
-                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
-                .willRespondWith()
-                .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
-                .body("[]")
-                .toPact();
-    }
+  @Pact(consumer = "FrontendApplication", provider = "ProductService")
+  RequestResponsePact noProductsExist(PactDslWithProvider builder) {
+    return builder.given("no products exist")
+      .uponReceiving("get all products")
+      .method("GET")
+      .path("/products")
+      .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+      .willRespondWith()
+      .status(200)
+      .headers(headers())
+      .body("[]")
+      .toPact();
+  }
 
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact allProductsNoAuthToken(PactDslWithProvider builder) {
-        return builder.given("products exist")
-                .uponReceiving("get all products with no auth token")
-                .method("GET")
-                .path("/products")
-                .willRespondWith()
-                .status(401)
-                .toPact();
-    }
+  @Pact(consumer = "FrontendApplication", provider = "ProductService")
+  RequestResponsePact allProductsNoAuthToken(PactDslWithProvider builder) {
+    return builder.given("products exist")
+      .uponReceiving("get all products with no auth token")
+      .method("GET")
+      .path("/products")
+      .willRespondWith()
+      .status(401)
+      .toPact();
+  }
 
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact getOneProduct(PactDslWithProvider builder) {
-        return builder.given("product with ID 10 exists")
-                .uponReceiving("get product with ID 10")
-                .method("GET")
-                .path("/product/10")
-                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
-                .willRespondWith()
-                .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
-                .body(newJsonBody(object -> {
-                    object.stringType("id", "10");
-                    object.stringType("type", "CREDIT_CARD");
-                    object.stringType("name", "28 Degrees");
-                }).build())
-                .toPact();
-    }
+  @Pact(consumer = "FrontendApplication", provider = "ProductService")
+  RequestResponsePact getOneProduct(PactDslWithProvider builder) {
+    return builder.given("product with ID 10 exists")
+      .uponReceiving("get product with ID 10")
+      .method("GET")
+      .path("/product/10")
+      .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+      .willRespondWith()
+      .status(200)
+      .headers(headers())
+      .body(newJsonBody(object -> {
+        object.stringType("id", "10");
+        object.stringType("type", "CREDIT_CARD");
+        object.stringType("name", "28 Degrees");
+      }).build())
+      .toPact();
+  }
 
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact productDoesNotExist(PactDslWithProvider builder) {
-        return builder.given("product with ID 11 does not exist")
-                .uponReceiving("get product with ID 11")
-                .method("GET")
-                .path("/product/11")
-                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
-                .willRespondWith()
-                .status(404)
-                .toPact();
-    }
+  @Pact(consumer = "FrontendApplication", provider = "ProductService")
+  RequestResponsePact productDoesNotExist(PactDslWithProvider builder) {
+    return builder.given("product with ID 11 does not exist")
+      .uponReceiving("get product with ID 11")
+      .method("GET")
+      .path("/product/11")
+      .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+      .willRespondWith()
+      .status(404)
+      .toPact();
+  }
 
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact singleProductnoAuthToken(PactDslWithProvider builder) {
-        return builder.given("product with ID 10 exists")
-                .uponReceiving("get product by ID 10 with no auth token")
-                .method("GET")
-                .path("/product/10")
-                .willRespondWith()
-                .status(401)
-                .toPact();
-    }
+  @Pact(consumer = "FrontendApplication", provider = "ProductService")
+  RequestResponsePact singleProductnoAuthToken(PactDslWithProvider builder) {
+    return builder.given("product with ID 10 exists")
+      .uponReceiving("get product by ID 10 with no auth token")
+      .method("GET")
+      .path("/product/10")
+      .willRespondWith()
+      .status(401)
+      .toPact();
+  }
 
-    @Test
-    @PactTestFor(pactMethod = "getAllProducts")
-    void getAllProducts_whenProductsExist(MockServer mockServer) {
-        Product product = new Product();
-        product.setId("09");
-        product.setType("CREDIT_CARD");
-        product.setName("Gem Visa");
-        List<Product> expected = List.of(product, product);
+  @Test
+  @PactTestFor(pactMethod = "getAllProducts")
+  void getAllProducts_whenProductsExist(MockServer mockServer) {
+    Product product = new Product();
+    product.setId("09");
+    product.setType("CREDIT_CARD");
+    product.setName("Gem Visa");
+    List<Product> expected = Arrays.asList(product, product);
 
-        RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
-        List<Product> products = new ProductService(restTemplate).getAllProducts();
+    RestTemplate restTemplate = new RestTemplateBuilder()
+      .rootUri(mockServer.getUrl())
+      .build();
+    List<Product> products = new ProductService(restTemplate).getAllProducts();
 
-        assertEquals(expected, products);
-    }
+    assertEquals(expected, products);
+  }
 
-    @Test
-    @PactTestFor(pactMethod = "noProductsExist")
-    void getAllProducts_whenNoProductsExist(MockServer mockServer) {
-        RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
-        List<Product> products = new ProductService(restTemplate).getAllProducts();
+  @Test
+  @PactTestFor(pactMethod = "noProductsExist")
+  void getAllProducts_whenNoProductsExist(MockServer mockServer) {
+    RestTemplate restTemplate = new RestTemplateBuilder()
+      .rootUri(mockServer.getUrl())
+      .build();
+    List<Product> products = new ProductService(restTemplate).getAllProducts();
 
-        assertEquals(Collections.emptyList(), products);
-    }
+    assertEquals(Collections.emptyList(), products);
+  }
 
-    @Test
-    @PactTestFor(pactMethod = "allProductsNoAuthToken")
-    void getAllProducts_whenNoAuth(MockServer mockServer) {
-        RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
+  @Test
+  @PactTestFor(pactMethod = "allProductsNoAuthToken")
+  void getAllProducts_whenNoAuth(MockServer mockServer) {
+    RestTemplate restTemplate = new RestTemplateBuilder()
+      .rootUri(mockServer.getUrl())
+      .build();
 
-        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
-                () -> new ProductService(restTemplate).getAllProducts());
-        assertEquals(401, e.getRawStatusCode());
-    }
+    HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+      () -> new ProductService(restTemplate).getAllProducts());
+    assertEquals(401, e.getRawStatusCode());
+  }
 
-    @Test
-    @PactTestFor(pactMethod = "getOneProduct")
-    void getProductById_whenProductWithId10Exists(MockServer mockServer) {
-        Product expected = new Product();
-        expected.setId("10");
-        expected.setType("CREDIT_CARD");
-        expected.setName("28 Degrees");
+  @Test
+  @PactTestFor(pactMethod = "getOneProduct")
+  void getProductById_whenProductWithId10Exists(MockServer mockServer) {
+    Product expected = new Product();
+    expected.setId("10");
+    expected.setType("CREDIT_CARD");
+    expected.setName("28 Degrees");
 
-        RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
-        Product product = new ProductService(restTemplate).getProduct("10");
+    RestTemplate restTemplate = new RestTemplateBuilder()
+      .rootUri(mockServer.getUrl())
+      .build();
+    Product product = new ProductService(restTemplate).getProduct("10");
 
-        assertEquals(expected, product);
-    }
+    assertEquals(expected, product);
+  }
 
-    @Test
-    @PactTestFor(pactMethod = "productDoesNotExist")
-    void getProductById_whenProductWithId11DoesNotExist(MockServer mockServer) {
-        RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
+  @Test
+  @PactTestFor(pactMethod = "productDoesNotExist")
+  void getProductById_whenProductWithId11DoesNotExist(MockServer mockServer) {
+    RestTemplate restTemplate = new RestTemplateBuilder()
+      .rootUri(mockServer.getUrl())
+      .build();
 
-        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
-                () -> new ProductService(restTemplate).getProduct("11"));
-        assertEquals(404, e.getRawStatusCode());
-    }
+    HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+      () -> new ProductService(restTemplate).getProduct("11"));
+    assertEquals(404, e.getRawStatusCode());
+  }
 
-    @Test
-    @PactTestFor(pactMethod = "singleProductnoAuthToken")
-    void getProductById_whenNoAuth(MockServer mockServer) {
-        RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
+  @Test
+  @PactTestFor(pactMethod = "singleProductnoAuthToken")
+  void getProductById_whenNoAuth(MockServer mockServer) {
+    RestTemplate restTemplate = new RestTemplateBuilder()
+      .rootUri(mockServer.getUrl())
+      .build();
 
-        HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
-                () -> new ProductService(restTemplate).getProduct("10"));
-        assertEquals(401, e.getRawStatusCode());
-    }
+    HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
+      () -> new ProductService(restTemplate).getProduct("10"));
+    assertEquals(401, e.getRawStatusCode());
+  }
+
+  private Map<String, String> headers() {
+    Map<String, String> headers = new HashMap<>();
+    headers.put("Content-Type", "application/json; charset=utf-8");
+    return headers;
+  }
 }
 ```
 
@@ -849,6 +905,8 @@ FAILURE: Build failed with an exception.
 ```
 
 Now with the most recently added interactions where we are expecting a response of 401 when no authorization header is sent, we are getting 200...
+
+Move on to [step 9](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step9#step-9---implement-authorisation-on-the-provider)
 
 ## Step 9 - Implement authorisation on the provider
 
@@ -922,6 +980,8 @@ FAILURE: Build failed with an exception.
 
 Oh, dear. _More_ tests are failing. Can you understand why?
 
+Move on to [step 10](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step10#step-10---request-filters-on-the-provider)
+
 ## Step 10 - Request Filters on the Provider
 
 Because our pact file has static data in it, our bearer token is now out of date, so when Pact verification passes it to the Provider we get a `401`. There are multiple ways to resolve this - mocking or stubbing out the authentication component is a common one. In our use case, we are going to use a process referred to as _Request Filtering_, using a `RequestFilter`.
@@ -961,6 +1021,8 @@ We can now run the Provider tests
 
 BUILD SUCCESSFUL in 1s
 ```
+
+Move on to [step 11](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step11#step-11---using-a-pact-broker)
 
 ## Step 11 - Using a Pact Broker
 

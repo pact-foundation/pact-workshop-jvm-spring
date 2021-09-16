@@ -18,6 +18,7 @@ import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -65,7 +66,7 @@ public class ProductPactProviderTest {
     @State("products exist")
     void toProductsExistState() {
         when(productRepository.fetchAll()).thenReturn(
-                List.of(new Product("09", "CREDIT_CARD", "Gem Visa", "v1"),
+                Arrays.asList(new Product("09", "CREDIT_CARD", "Gem Visa", "v1"),
                         new Product("10", "CREDIT_CARD", "28 Degrees", "v1")));
     }
 
