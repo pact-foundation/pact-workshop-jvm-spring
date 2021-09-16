@@ -231,75 +231,81 @@ In `consumer/src/test/java/au/com/dius/pactworkshop/consumer/ProductConsumerPact
 ```java
 @ExtendWith(PactConsumerTestExt.class)
 public class ProductConsumerPactTest {
-
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact getAllProducts(PactDslWithProvider builder) {
+  
+      @Pact(consumer = "FrontendApplication", provider = "ProductService")
+      RequestResponsePact getAllProducts(PactDslWithProvider builder) {
         return builder.given("products exist")
-                .uponReceiving("get all products")
-                .method("GET")
-                .path("/products")
-                .willRespondWith()
-                .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
-                .body(newJsonArrayMinLike(2, array -> {
-                    array.object(object -> {
-                        object.stringType("id", "09");
-                        object.stringType("type", "CREDIT_CARD");
-                        object.stringType("name", "Gem Visa");
-                    });
-                }).build())
-                .toPact();
-    }
-
-    @Pact(consumer = "FrontendApplication", provider = "ProductService")
-    RequestResponsePact getOneProduct(PactDslWithProvider builder) {
+          .uponReceiving("get all products")
+          .method("GET")
+          .path("/products")
+          .willRespondWith()
+          .status(200)
+          .headers(headers())
+          .body(newJsonArrayMinLike(2, array ->
+            array.object(object -> {
+              object.stringType("id", "09");
+              object.stringType("type", "CREDIT_CARD");
+              object.stringType("name", "Gem Visa");
+            })
+          ).build())
+          .toPact();
+      }
+    
+      @Pact(consumer = "FrontendApplication", provider = "ProductService")
+      RequestResponsePact getOneProduct(PactDslWithProvider builder) {
         return builder.given("product with ID 10 exists")
-                .uponReceiving("get product with ID 10")
-                .method("GET")
-                .path("/products/10")
-                .willRespondWith()
-                .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
-                .body(newJsonBody(object -> {
-                    object.stringType("id", "10");
-                    object.stringType("type", "CREDIT_CARD");
-                    object.stringType("name", "28 Degrees");
-                }).build())
-                .toPact();
-    }
-
-    @Test
-    @PactTestFor(pactMethod = "getAllProducts")
-    void getAllProducts_whenProductsExist(MockServer mockServer) {
+          .uponReceiving("get product with ID 10")
+          .method("GET")
+          .path("/products/10")
+          .willRespondWith()
+          .status(200)
+          .headers(headers())
+          .body(newJsonBody(object -> {
+            object.stringType("id", "10");
+            object.stringType("type", "CREDIT_CARD");
+            object.stringType("name", "28 Degrees");
+          }).build())
+          .toPact();
+      }
+    
+      @Test
+      @PactTestFor(pactMethod = "getAllProducts")
+      void getAllProducts_whenProductsExist(MockServer mockServer) {
         Product product = new Product();
         product.setId("09");
         product.setType("CREDIT_CARD");
         product.setName("Gem Visa");
-        List<Product> expected = List.of(product, product);
-
+        List<Product> expected = Arrays.asList(product, product);
+    
         RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
+          .rootUri(mockServer.getUrl())
+          .build();
         List<Product> products = new ProductService(restTemplate).getAllProducts();
-
+    
         assertEquals(expected, products);
-    }
-
-    @Test
-    @PactTestFor(pactMethod = "getOneProduct")
-    void getProductById_whenProductWithId10Exists(MockServer mockServer) {
+      }
+    
+      @Test
+      @PactTestFor(pactMethod = "getOneProduct")
+      void getProductById_whenProductWithId10Exists(MockServer mockServer) {
         Product expected = new Product();
         expected.setId("10");
         expected.setType("CREDIT_CARD");
         expected.setName("28 Degrees");
-
+    
         RestTemplate restTemplate = new RestTemplateBuilder()
-                .rootUri(mockServer.getUrl())
-                .build();
+          .rootUri(mockServer.getUrl())
+          .build();
         Product product = new ProductService(restTemplate).getProduct("10");
-
+    
         assertEquals(expected, product);
-    }
+      }
+    
+      private Map<String, String> headers() {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "application/json; charset=utf-8");
+        return headers;
+      }
 }
 ```
 
@@ -326,6 +332,8 @@ Running this test still passes, but it creates a pact file which we can use to v
 A pact file should have been generated in *consumer/build/pacts/FrontendApplication-ProductService.json*
 
 *NOTE*: even if the API client had been graciously provided for us by our Provider Team, it doesn't mean that we shouldn't write contract tests - because the version of the client we have may not always be in sync with the deployed API - and also because we will write tests on the output appropriate to our specific needs.
+
+Move on to [step 4](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step4#step-4---verify-the-provider)
 
 ## Step 4 - Verify the provider
 
