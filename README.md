@@ -899,3 +899,5 @@ FAILURE: Build failed with an exception.
 ```
 
 Now with the most recently added interactions where we are expecting a response of 401 when no authorization header is sent, we are getting 200...
+
+Move on to  [step 9](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step9#step-9---implement-authorisation-on-the-provider)
