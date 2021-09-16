@@ -11,6 +11,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,7 +31,7 @@ public class ProductConsumerPactTest {
                 .path("/products")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body(newJsonArrayMinLike(2, array ->
                         array.object(object -> {
                             object.stringType("id", "09");
@@ -48,7 +50,7 @@ public class ProductConsumerPactTest {
                 .path("/products/10")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body(newJsonBody(object -> {
                     object.stringType("id", "10");
                     object.stringType("type", "CREDIT_CARD");
@@ -64,7 +66,7 @@ public class ProductConsumerPactTest {
         product.setId("09");
         product.setType("CREDIT_CARD");
         product.setName("Gem Visa");
-        List<Product> expected = List.of(product, product);
+        List<Product> expected = Arrays.asList(product, product);
 
         RestTemplate restTemplate = new RestTemplateBuilder()
                 .rootUri(mockServer.getUrl())
@@ -88,5 +90,11 @@ public class ProductConsumerPactTest {
         Product product = new ProductService(restTemplate).getProduct("10");
 
         assertEquals(expected, product);
+    }
+
+    private Map<String, String> headers() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Content-Type", "application/json; charset=utf-8");
+      return headers;
     }
 }
