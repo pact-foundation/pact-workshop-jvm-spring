@@ -980,7 +980,7 @@ FAILURE: Build failed with an exception.
 
 Oh, dear. _More_ tests are failing. Can you understand why?
 
-Move on to [step 10: **Request Filters on the Provider**](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step10#step-10---request-filters-on-the-provider)
+Move on to [step 10](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step10#step-10---request-filters-on-the-provider)
 
 ## Step 10 - Request Filters on the Provider
 
