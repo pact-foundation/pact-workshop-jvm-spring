@@ -15,7 +15,7 @@ plugins {
 
 group = 'au.com.dius.pactworkshop'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+sourceCompatibility = '8'
 
 
 
