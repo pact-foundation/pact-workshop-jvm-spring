@@ -13,6 +13,8 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +35,7 @@ public class ProductConsumerPactTest {
                 .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body(newJsonArrayMinLike(2, array ->
                         array.object(object -> {
                             object.stringType("id", "09");
@@ -53,7 +55,7 @@ public class ProductConsumerPactTest {
                 .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body("[]")
                 .toPact();
     }
@@ -78,7 +80,7 @@ public class ProductConsumerPactTest {
                 .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
                 .willRespondWith()
                 .status(200)
-                .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+                .headers(headers())
                 .body(newJsonBody(object -> {
                     object.stringType("id", "10");
                     object.stringType("type", "CREDIT_CARD");
@@ -117,7 +119,7 @@ public class ProductConsumerPactTest {
         product.setId("09");
         product.setType("CREDIT_CARD");
         product.setName("Gem Visa");
-        List<Product> expected = List.of(product, product);
+        List<Product> expected = Arrays.asList(product, product);
 
         RestTemplate restTemplate = new RestTemplateBuilder()
                 .rootUri(mockServer.getUrl())
@@ -188,5 +190,11 @@ public class ProductConsumerPactTest {
         HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
                 () -> new ProductService(restTemplate).getProduct("10"));
         assertEquals(401, e.getRawStatusCode());
+    }
+
+    private Map<String, String> headers() {
+      Map<String, String> headers = new HashMap<>();
+      headers.put("Content-Type", "application/json; charset=utf-8");
+      return headers;
     }
 }
