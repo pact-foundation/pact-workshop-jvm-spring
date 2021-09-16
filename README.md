@@ -591,7 +591,7 @@ We expected this failure, because the product we are requesting does in fact exi
 
 We could resolve this by updating our consumer test to use a known non-existent product, but it's worth understanding how Provider states work more generally.
 
-Move on to  [step 7](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step7#step-7---adding-the-missing-states)
+Move on to [step 7](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step7#step-7---adding-the-missing-states)
 
 ## Step 7 - Adding the missing states
 
@@ -613,9 +613,9 @@ Let's open up our provider Pact verifications in `provider/src/test/java/au/com/
 ```java
     @State("products exist")
     void toProductsExistState() {
-        when(productRepository.fetchAll()).thenReturn(
-                List.of(new Product("09", "CREDIT_CARD", "Gem Visa", "v1"),
-                        new Product("10", "CREDIT_CARD", "28 Degrees", "v1")));
+      when(productRepository.fetchAll()).thenReturn(
+          Arrays.asList(new Product("09", "CREDIT_CARD", "Gem Visa", "v1"),
+              new Product("10", "CREDIT_CARD", "28 Degrees", "v1")));
     }
 
     @State({
@@ -641,6 +641,8 @@ BUILD SUCCESSFUL in 11s
 ```
 
 _NOTE_: The states are not necessarily a 1 to 1 mapping with the consumer contract tests. You can reuse states amongst different tests. In this scenario we could have used `no products exist` for both tests which would have equally been valid.
+
+Move on to [step 8](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step8#step-8---authorization)
 
 ## Step 8 - Authorization
 
