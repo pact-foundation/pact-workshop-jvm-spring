@@ -441,7 +441,7 @@ RequestResponsePact getOneProduct(PactDslWithProvider builder) {
             .path("/product/10")
             .willRespondWith()
             .status(200)
-            .headers(Map.of("Content-Type", "application/json; charset=utf-8"))
+            .headers(headers())
             .body(newJsonBody(object -> {
                 object.stringType("id", "10");
                 object.stringType("type", "CREDIT_CARD");
@@ -485,6 +485,8 @@ BUILD SUCCESSFUL in 10s
 ```
 
 Yay - green ✅!
+
+Move on to [step 6](https://github.com/pact-foundation/pact-workshop-jvm-spring/tree/step6#step-6---consumer-updates-contract-for-missing-products)
 
 ## Step 6 - Consumer updates contract for missing products
 
