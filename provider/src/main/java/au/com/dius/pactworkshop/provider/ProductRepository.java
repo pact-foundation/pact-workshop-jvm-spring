@@ -21,6 +21,7 @@ public class ProductRepository {
 
     public Optional<Product> getById(String id) {
         initProducts();
+
         return Optional.ofNullable(PRODUCTS.get(id));
     }
 
