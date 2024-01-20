@@ -1,6 +1,7 @@
 plugins {
     id 'org.springframework.boot' version '3.2.2'
     id 'io.spring.dependency-management' version '1.1.4'
+    // id 'io.spring.dependency-management' version '1.1.4'
 }
 
 group = 'au.com.dius.pactworkshop'
@@ -10,11 +11,12 @@ sourceCompatibility = '17'
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-
+    implementation 'org.apache.httpcomponents:httpcore:4.4.1'
+    implementation 'org.apache.httpcomponents:httpclient:4.5'
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
     }
-    testImplementation("au.com.dius.pact.provider:junit5:4.1.7")
+    testImplementation("au.com.dius.pact.provider:junit5:4.6.5")
 }
 
 def getGitHash = { ->
