@@ -1084,7 +1084,7 @@ pact {
 		pactBrokerUrl = 'http://localhost:8000/'
 		pactBrokerUsername = getOrDefault('PACT_BROKER_USERNAME', 'pact_workshop')
 		pactBrokerPassword = getOrDefault('PACT_BROKER_PASSWORD', 'pact_workshop')
-		tags = [getGitBranch(), 'test', 'prod']
+		consumerBranch = getGitBranch()
 		consumerVersion = getGitHash()
 	}
 }
@@ -1150,9 +1150,9 @@ def getGitBranch = { ->
 test {
     useJUnitPlatform()
 
+    systemProperty 'pact.provider.branch', getGitBranch()
     if (System.getProperty('pactPublishResults') == 'true') {
         systemProperty 'pact.provider.version', getGitHash()
-        systemProperty 'pact.provider.tag', getGitBranch()
         systemProperty 'pact.verifier.publishResults', 'true'
     }
 }

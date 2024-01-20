@@ -1,7 +1,6 @@
 plugins {
     id 'org.springframework.boot' version '3.2.2'
     id 'io.spring.dependency-management' version '1.1.4'
-    // id 'io.spring.dependency-management' version '1.1.4'
 }
 
 group = 'au.com.dius.pactworkshop'
@@ -40,9 +39,9 @@ def getGitBranch = { ->
 test {
     useJUnitPlatform()
 
+    systemProperty 'pact.provider.branch', getGitBranch()
     if (System.getProperty('pactPublishResults') == 'true') {
         systemProperty 'pact.provider.version', getGitHash()
-        systemProperty 'pact.provider.tag', getGitBranch()
         systemProperty 'pact.verifier.publishResults', 'true'
     }
 }

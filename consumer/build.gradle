@@ -72,7 +72,7 @@ pact {
 		pactBrokerUrl = 'http://localhost:8000/'
 		pactBrokerUsername = 'pact_workshop'
 		pactBrokerPassword = 'pact_workshop'
-		tags = [getGitBranch(), 'test', 'prod']
+		consumerBranch = getGitBranch()
 		consumerVersion = getGitHash()
 	}
 }

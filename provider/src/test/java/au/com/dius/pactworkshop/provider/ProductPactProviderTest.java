@@ -7,7 +7,8 @@ import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactBroker;
 import au.com.dius.pact.provider.junitsupport.loader.PactBrokerAuth;
-import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
+import au.com.dius.pact.provider.junitsupport.loader.SelectorBuilder;
+// import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 import org.apache.hc.core5.http.HttpRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -33,10 +34,18 @@ import static org.mockito.Mockito.when;
         port = "8000",
         authentication = @PactBrokerAuth(username = "pact_workshop", password = "pact_workshop")
 )
+
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class ProductPactProviderTest {
-
+    @au.com.dius.pact.provider.junitsupport.loader.PactBrokerConsumerVersionSelectors
+    public static SelectorBuilder consumerVersionSelectors() {
+      // Select Pacts for consumers deployed to production with branch from CI build 
+      return new SelectorBuilder()
+        .deployedOrReleased()
+        .mainBranch()
+        .branch("dep_update");
+    }
     @LocalServerPort
     int port;
 
