@@ -11,15 +11,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
+import au.com.dius.pact.core.model.PactSpecVersion; // required for v4.6.x to set pactVersion
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.pactfoundation.consumer.dsl.LambdaDsl.newJsonArrayMinLike;
-import static io.pactfoundation.consumer.dsl.LambdaDsl.newJsonBody;
+import static au.com.dius.pact.consumer.dsl.LambdaDsl.newJsonArrayMinLike;
+import static au.com.dius.pact.consumer.dsl.LambdaDsl.newJsonBody;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -113,7 +113,7 @@ public class ProductConsumerPactTest {
     }
 
     @Test
-    @PactTestFor(pactMethod = "getAllProducts")
+    @PactTestFor(pactMethod = "getAllProducts", pactVersion = PactSpecVersion.V3)
     void getAllProducts_whenProductsExist(MockServer mockServer) {
         Product product = new Product();
         product.setId("09");
@@ -130,7 +130,7 @@ public class ProductConsumerPactTest {
     }
 
     @Test
-    @PactTestFor(pactMethod = "noProductsExist")
+    @PactTestFor(pactMethod = "noProductsExist", pactVersion = PactSpecVersion.V3)
     void getAllProducts_whenNoProductsExist(MockServer mockServer) {
         RestTemplate restTemplate = new RestTemplateBuilder()
                 .rootUri(mockServer.getUrl())
@@ -141,7 +141,7 @@ public class ProductConsumerPactTest {
     }
 
     @Test
-    @PactTestFor(pactMethod = "allProductsNoAuthToken")
+    @PactTestFor(pactMethod = "allProductsNoAuthToken", pactVersion = PactSpecVersion.V3)
     void getAllProducts_whenNoAuth(MockServer mockServer) {
         RestTemplate restTemplate = new RestTemplateBuilder()
                 .rootUri(mockServer.getUrl())
@@ -153,7 +153,7 @@ public class ProductConsumerPactTest {
     }
 
     @Test
-    @PactTestFor(pactMethod = "getOneProduct")
+    @PactTestFor(pactMethod = "getOneProduct", pactVersion = PactSpecVersion.V3)
     void getProductById_whenProductWithId10Exists(MockServer mockServer) {
         Product expected = new Product();
         expected.setId("10");
@@ -169,7 +169,7 @@ public class ProductConsumerPactTest {
     }
 
     @Test
-    @PactTestFor(pactMethod = "productDoesNotExist")
+    @PactTestFor(pactMethod = "productDoesNotExist", pactVersion = PactSpecVersion.V3)
     void getProductById_whenProductWithId11DoesNotExist(MockServer mockServer) {
         RestTemplate restTemplate = new RestTemplateBuilder()
                 .rootUri(mockServer.getUrl())
@@ -181,7 +181,7 @@ public class ProductConsumerPactTest {
     }
 
     @Test
-    @PactTestFor(pactMethod = "singleProductnoAuthToken")
+    @PactTestFor(pactMethod = "singleProductnoAuthToken", pactVersion = PactSpecVersion.V3)
     void getProductById_whenNoAuth(MockServer mockServer) {
         RestTemplate restTemplate = new RestTemplateBuilder()
                 .rootUri(mockServer.getUrl())
