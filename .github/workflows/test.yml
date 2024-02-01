@@ -2,10 +2,10 @@ name: CI
 on:
     push:
         branches:
-            - step4
+            - step3
     pull_request:
         branches:
-            - step4
+            - step3
 jobs:
     test:
         runs-on: ubuntu-latest
