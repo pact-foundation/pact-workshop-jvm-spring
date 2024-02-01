@@ -1,0 +1,37 @@
+name: CI
+on:
+    push:
+        branches:
+            - step11
+    pull_request:
+        branches:
+            - step11
+jobs:
+    test:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up JDK 17
+              uses: actions/setup-java@v4
+              with:
+                  java-version: 17
+                  distribution: 'temurin'
+
+            - name: Test consumer tests
+              run: ./gradlew consumer:test
+            - name: Test consumer pact tests
+              run: ./gradlew consumer:test --tests '*Pact*Test'
+            - uses: KengoTODA/actions-setup-docker-compose@v1
+              if: ${{ env.ACT }}
+              name: Install `docker-compose` for use with act
+              with:
+                version: '2.24.1'
+            - name: Start broker
+              run: docker-compose up -d
+            - name: Publish consumer pacts
+              run: ./gradlew consumer:test --tests '*PactTest*' pactPublish
+            - name: Test provider pact tests
+              run: ./gradlew provider:test --tests '*Pact*Test'
