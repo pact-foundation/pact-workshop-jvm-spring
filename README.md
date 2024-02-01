@@ -7,7 +7,7 @@ step of the workshop just check out the branch for that step (i.e. `git checkout
 
 ## Requirements
 
-* JDK 8+
+* JDK 17+
 * Docker for step 11
 
 ## Workshop outline:
@@ -317,14 +317,14 @@ This test starts a mock server on a random port that acts as our provider servic
 To run only the Pact tests:
 
 ```console
-> ./gradlew consumer:test --tests *PactTest
+> ./gradlew consumer:test --tests '*PactTest'
 
 ```
 
 Running this test still passes, but it creates a pact file which we can use to validate our assumptions on the provider side, and have conversation around.
 
 ```console
-❯ ./gradlew consumer:test --tests *PactTest
+❯ ./gradlew consumer:test --tests '*PactTest'
   
   BUILD SUCCESSFUL in 6s
 ```
