@@ -1096,7 +1096,8 @@ Now run
 ❯ ./gradlew consumer:test --tests '*PactTest*' pactPublish
   
   > Task :consumer:pactPublish
-  Publishing 'FrontendApplication-ProductService.json' with tags step11, test, prod ... OK
+  Publishing 'FrontendApplication-ProductService.json'
+  OK
   
   BUILD SUCCESSFUL in 11s
 

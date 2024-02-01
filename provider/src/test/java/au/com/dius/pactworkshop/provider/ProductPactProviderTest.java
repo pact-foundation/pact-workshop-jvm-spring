@@ -8,7 +8,6 @@ import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactBroker;
 import au.com.dius.pact.provider.junitsupport.loader.PactBrokerAuth;
 import au.com.dius.pact.provider.junitsupport.loader.SelectorBuilder;
-// import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 import org.apache.hc.core5.http.HttpRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -22,13 +21,11 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
 
 @Provider("ProductService")
-//@PactFolder("pacts")
 @PactBroker(
         host = "localhost",
         port = "8000",
@@ -40,11 +37,12 @@ import static org.mockito.Mockito.when;
 public class ProductPactProviderTest {
     @au.com.dius.pact.provider.junitsupport.loader.PactBrokerConsumerVersionSelectors
     public static SelectorBuilder consumerVersionSelectors() {
-      // Select Pacts for consumers deployed to production with branch from CI build 
+      // Select Pacts for consumers deployed or released to production, those on the main branch
+      // and those on a named branch step11, for use in our workshop
       return new SelectorBuilder()
         .deployedOrReleased()
         .mainBranch()
-        .branch("dep_update");
+        .branch("step11");
     }
     @LocalServerPort
     int port;
