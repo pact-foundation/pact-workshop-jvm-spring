@@ -29,7 +29,6 @@ dependencies {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
 	testImplementation 'com.github.tomakehurst:wiremock:3.0.1'
-	// testImplementation 'au.com.dius.pact.consumer:java8:4.6.5'
 	testImplementation 'au.com.dius.pact.consumer:junit5:4.6.5'
 }
 
