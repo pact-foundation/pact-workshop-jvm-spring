@@ -149,7 +149,7 @@ public class ProductConsumerPactTest {
 
         HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
                 () -> new ProductService(restTemplate).getAllProducts());
-        assertEquals(401, e.getRawStatusCode());
+        assertEquals(401, e.getStatusCode().value());
     }
 
     @Test
@@ -177,7 +177,7 @@ public class ProductConsumerPactTest {
 
         HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
                 () -> new ProductService(restTemplate).getProduct("11"));
-        assertEquals(404, e.getRawStatusCode());
+        assertEquals(404, e.getStatusCode().value());
     }
 
     @Test
@@ -189,7 +189,7 @@ public class ProductConsumerPactTest {
 
         HttpClientErrorException e = assertThrows(HttpClientErrorException.class,
                 () -> new ProductService(restTemplate).getProduct("10"));
-        assertEquals(401, e.getRawStatusCode());
+        assertEquals(401, e.getStatusCode().value());
     }
 
     private Map<String, String> headers() {
