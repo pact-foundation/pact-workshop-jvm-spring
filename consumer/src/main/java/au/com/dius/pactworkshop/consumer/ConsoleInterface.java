@@ -49,10 +49,15 @@ public class ConsoleInterface implements CommandLineRunner {
 
     private void printProduct(int index) {
         String id = products.get(index - 1).getId();
-        Product product = productService.getProduct(id);
+        try {
+            Product product = productService.getProduct(id);
 
-        System.out.println("Product Details\n---------------");
-        System.out.println(product);
+            System.out.println("Product Details\n---------------");
+            System.out.println(product);
+        } catch (Exception e) {
+            System.out.println("Failed to load product " + id);
+            System.out.println(e.getMessage());
+        }
     }
 
     private Integer parseChoice(String choice) {

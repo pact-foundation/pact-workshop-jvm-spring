@@ -7,7 +7,7 @@ step of the workshop just check out the branch for that step (i.e. `git checkout
 
 ## Requirements
 
-* JDK 8+
+* JDK 17+
 * Docker for step 11
 
 ## Workshop outline:

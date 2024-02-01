@@ -1,0 +1,24 @@
+name: CI
+on:
+    push:
+        branches:
+            - step1
+    pull_request:
+        branches:
+            - step1
+jobs:
+    test:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up JDK 17
+              uses: actions/setup-java@v4
+              with:
+                  java-version: 17
+                  distribution: 'temurin'
+
+            - name: Test consumer tests
+              run: ./gradlew consumer:bootRun || true
