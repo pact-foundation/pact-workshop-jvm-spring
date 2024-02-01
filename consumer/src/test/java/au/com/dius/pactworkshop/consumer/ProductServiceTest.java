@@ -60,7 +60,7 @@ class ProductServiceTest {
 
     @Test
     void getProductById() {
-        wireMockServer.stubFor(get(urlPathEqualTo("/products/50"))
+        wireMockServer.stubFor(get(urlPathEqualTo("/product/50"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
