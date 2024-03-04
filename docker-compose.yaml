@@ -17,7 +17,7 @@ services:
     links:
       - postgres
     ports:
-      - 8000:9292
+      - "8000:9292"
     restart: always
     environment:
       PACT_BROKER_BASIC_AUTH_USERNAME: pact_workshop
