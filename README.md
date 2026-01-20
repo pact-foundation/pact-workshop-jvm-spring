@@ -457,7 +457,7 @@ RequestResponsePact getOneProduct(PactDslWithProvider builder) {
 Let's run and generate an updated pact file on the client:
 
 ```console
-❯ ./gradlew consumer:test --tests *PactTest
+❯ ./gradlew consumer:test --tests '*PactTest'
   
   BUILD SUCCESSFUL in 7s
 ```
@@ -599,7 +599,7 @@ Our code already deals with missing users and sends a `404` response, however ou
 
 In this step, we will add state handlers to our provider Pact verifications, which will update the state of our data store depending on which states the consumers require.
 
-States are invoked prior to the actual test function being invoked. You can see the full [lifecycle here](https://github.com/pact-foundation/pact-go#lifecycle-of-a-provider-verification).
+States are invoked prior to the actual test function being invoked. You can see the full [lifecycle here](https://docs.pact.io/implementation_guides/go/docs/provider#lifecycle-of-a-provider-verification).
 
 We're going to add handlers for all our states:
 
@@ -635,7 +635,7 @@ Let's open up our provider Pact verifications in `provider/src/test/java/au/com/
 Let's see how we go now:
 
 ```console
-❯ ./gradlew provider:test --tests *Pact*Test
+❯ ./gradlew provider:test --tests '*Pact*Test'
 
 BUILD SUCCESSFUL in 11s
 ```
