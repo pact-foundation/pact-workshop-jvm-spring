@@ -65,12 +65,20 @@ def getGitBranch = { ->
 	return stdout.toString().trim()
 }
 
+static def getOrDefault(env, defaultVal) {
+	def val = System.getenv(env)
+	if (val == null || val.isEmpty()) {
+		val = defaultVal
+	}
+	return val
+}
+
 pact {
 	publish {
 		pactDirectory = 'consumer/build/pacts'
 		pactBrokerUrl = 'http://localhost:8000/'
-		pactBrokerUsername = 'pact_workshop'
-		pactBrokerPassword = 'pact_workshop'
+		pactBrokerUsername = getOrDefault('PACT_BROKER_USERNAME', 'pact_workshop')
+		pactBrokerPassword = getOrDefault('PACT_BROKER_PASSWORD', 'pact_workshop')
 		consumerBranch = getGitBranch()
 		consumerVersion = getGitHash()
 	}

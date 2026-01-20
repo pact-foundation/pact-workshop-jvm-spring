@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(PactConsumerTestExt.class)
 public class ProductConsumerPactTest {
+    static final String AUTH_TOKEN_REGEX = "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0123]):[0-5][0-9]";
 
     @Pact(consumer = "FrontendApplication", provider = "ProductService")
     RequestResponsePact getAllProducts(PactDslWithProvider builder) {
@@ -32,7 +33,7 @@ public class ProductConsumerPactTest {
                 .uponReceiving("get all products")
                 .method("GET")
                 .path("/products")
-                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+                .matchHeader("Authorization", AUTH_TOKEN_REGEX)
                 .willRespondWith()
                 .status(200)
                 .headers(headers())
@@ -52,7 +53,7 @@ public class ProductConsumerPactTest {
                 .uponReceiving("get all products")
                 .method("GET")
                 .path("/products")
-                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+                .matchHeader("Authorization", AUTH_TOKEN_REGEX)
                 .willRespondWith()
                 .status(200)
                 .headers(headers())
@@ -77,7 +78,7 @@ public class ProductConsumerPactTest {
                 .uponReceiving("get product with ID 10")
                 .method("GET")
                 .path("/product/10")
-                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+                .matchHeader("Authorization", AUTH_TOKEN_REGEX)
                 .willRespondWith()
                 .status(200)
                 .headers(headers())
@@ -95,7 +96,7 @@ public class ProductConsumerPactTest {
                 .uponReceiving("get product with ID 11")
                 .method("GET")
                 .path("/product/11")
-                .matchHeader("Authorization", "Bearer (19|20)\\d\\d-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])T([01][1-9]|2[0123]):[0-5][0-9]")
+                .matchHeader("Authorization", AUTH_TOKEN_REGEX)
                 .willRespondWith()
                 .status(404)
                 .toPact();
